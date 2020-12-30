@@ -622,12 +622,14 @@ class Connection {
                 } catch (InterruptedException ignored) {
                 }
             }
-
+            String leaderUrl2 = leaderUrl; //cope with k8s, leaderUrl2 is supposed to be service name instead of ip, hence not changing
+            
             try {
                 fetchSystemStatus(leaderUrl);
                 connectionClose = false;
             } catch (IOException e) {
                 connectionClose = true;
+                leaderUrl = leaderUrl2;
                 log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
             }
 
@@ -663,10 +665,10 @@ class Connection {
         }
 
         private void fetchSystemStatus(String url) throws IOException {
-            systemClusterStatus = fetchSystemClusterStatus(url);
+            systemClusterStatus = fetchSystemClusterStatus(url); //this returned clusterstatus have ip for leader url instead of service name
             systemTopologyStatus = fetchSystemTopologyStatus(url);
             if (!leaderUrl.equals(systemClusterStatus.getLeader().getUrl())) {
-                leaderUrl = (systemClusterStatus.getLeader().getUrl());
+                leaderUrl = (systemClusterStatus.getLeader().getUrl()); //change this part for k8s,
                 log.info("seaweedfs core leader is change to [" + leaderUrl + "]");
             }
             log.debug("seaweedfs core leader is found [" + leaderUrl + "]");
