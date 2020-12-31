@@ -59,6 +59,7 @@ public class FileSource implements InitializingBean, DisposableBean {
     private long fileStreamCacheSize = 8192;
     private HttpCacheStorage fileStreamCacheStorage = null;
     volatile private boolean startup = false;
+    private boolean useK8s = false;
 
     private Connection connection;
 
@@ -96,7 +97,8 @@ public class FileSource implements InitializingBean, DisposableBean {
                         this.enableFileStreamCache,
                         this.fileStreamCacheEntries,
                         this.fileStreamCacheSize,
-                        this.fileStreamCacheStorage);
+                        this.fileStreamCacheStorage,
+                        this.useK8s);
             }
             this.connection.startup();
             this.startup = true;
@@ -319,5 +321,9 @@ public class FileSource implements InitializingBean, DisposableBean {
     public void setFileStreamCacheStorage(HttpCacheStorage fileStreamCacheStorage) {
         this.fileStreamCacheStorage = fileStreamCacheStorage;
     }
+
+    public void setUseK8s(boolean useK8s){this.useK8s=useK8s;}
+
+    public boolean isUseK8s(){return useK8s;}
 
 }

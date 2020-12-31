@@ -93,6 +93,7 @@ class Connection {
     private IdleConnectionMonitorThread idleConnectionMonitorThread;
     private CloseableHttpClient httpClient;
     private CacheManager cacheManager = null;
+    private boolean useK8s = false;
 
     /**
      * Constructor, build by properties.
@@ -116,7 +117,7 @@ class Connection {
                int maxConnection, int maxConnectionsPreRoute, boolean enableLookupVolumeCache,
                long lookupVolumeCacheExpiry, int lookupVolumeCacheEntries,
                boolean enableFileStreamCache, int fileStreamCacheEntries, long fileStreamCacheSize,
-               HttpCacheStorage fileStreamCacheStorage)
+               HttpCacheStorage fileStreamCacheStorage, boolean useK8s)
             throws IOException {
         this.leaderUrl = leaderUrl;
         this.statusExpiry = statusExpiry;
@@ -134,6 +135,7 @@ class Connection {
         this.fileStreamCacheEntries = fileStreamCacheEntries;
         this.fileStreamCacheSize = fileStreamCacheSize;
         this.fileStreamCacheStorage = fileStreamCacheStorage;
+        this.useK8s = useK8s;
     }
 
     /**
@@ -622,17 +624,24 @@ class Connection {
                 } catch (InterruptedException ignored) {
                 }
             }
-            String leaderUrl2 = leaderUrl;
-            try {
-                fetchSystemStatus(leaderUrl);
-                connectionClose = false;
-            } catch (IOException e) {
-                connectionClose = true;
-                leaderUrl = leaderUrl2;
-                log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
+            if (useK8s){
+                try { //when using k8s, not updating leaderUrl when unable to connect with leader
+                    fetchSystemStatus();
+                    connectionClose = false;
+                } catch (IOException e) {
+                    connectionClose = true;
+                    log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
+                }
             }
-            leaderUrl = leaderUrl2;
-            log.info("current leader url is:"+leaderUrl);
+            else{
+                try {
+                    fetchSystemStatus(leaderUrl);
+                    connectionClose = false;
+                } catch (IOException e) {
+                    connectionClose = true;
+                    log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
+                }
+            }
 
             try {
                 if (connectionClose) {
@@ -675,7 +684,13 @@ class Connection {
             log.debug("seaweedfs core leader is found [" + leaderUrl + "]");
         }
 
-        private void shutdown() {
+        private void fetchSystemStatus() throws IOException {
+            fetchSystemClusterStatus(leaderUrl);
+            fetchSystemTopologyStatus(leaderUrl);
+        }
+
+
+            private void shutdown() {
             this.shutdown = true;
             this.interrupt();
             synchronized (this) {
