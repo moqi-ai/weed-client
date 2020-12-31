@@ -622,12 +622,13 @@ class Connection {
                 } catch (InterruptedException ignored) {
                 }
             }
-
+            String leaderUrl2 = leaderUrl;
             try {
                 fetchSystemStatus(leaderUrl);
                 connectionClose = false;
             } catch (IOException e) {
                 connectionClose = true;
+                leaderUrl = leaderUrl2;
                 log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
             }
 
