@@ -631,6 +631,8 @@ class Connection {
                 leaderUrl = leaderUrl2;
                 log.error("unable connect to the target seaweedfs core [" + leaderUrl + "]");
             }
+            leaderUrl = leaderUrl2;
+            log.info("current leader url is:"+leaderUrl);
 
             try {
                 if (connectionClose) {
